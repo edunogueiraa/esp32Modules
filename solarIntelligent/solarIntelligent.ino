@@ -1,25 +1,12 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <U8glib.h>
-// #include "configs.h"
+#include <Wire.h>
+#include <time.h>
+#include "configs.h"
 
-const char* ssid     = "XXXXX";
-const char* password = "XXXXX";
-
-const char* serverName = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-const char* serverUrl  = "http://XXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-
-#define CLIENT "NAME"
-#define TYPE   "NAME"
-
-
-#define VT_PIN 34
-#define AT_PIN 35
-
-
-#define ESP_VOLTAGEM 3.3
-
-U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NONE);
+float tensao   = 0;
+float corrente = 0;
+float potencia = 0;
 
 float lerTensao() {
   int leitura = analogRead(VT_PIN);
@@ -33,30 +20,41 @@ float lerCorrente() {
   return corrente;
 }
 
-void setup() {
+String obterTimestamp() {
+  struct tm info;
+  if (!getLocalTime(&info, 200)) return "";
+  char buf[25];
+  strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", &info);
+  return String(buf);
+}
 
-  u8g.setFont(u8g_font_unifont);
-  Serial.begin(921600);
-
-  WiFi.begin(ssid, password);
+void conectarWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Conectando ao Wi-Fi");
-
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-
-  Serial.println("");
-  Serial.print("Endereço IP: ");
+  Serial.println("\nWi-Fi conectado!");
+  Serial.print("IP do ESP32: ");
   Serial.println(WiFi.localIP());
+}
 
+
+void setup() {
+  Serial.begin(115200);
+
+  conectarWiFi();
+
+  configTime(0, 0, "pool.ntp.org", "time.google.com"); //servidores públicos de NTP
 }
 
 void loop() {
 
-  float corrente = lerCorrente();
-  float tensao   = lerTensao();
-  float potencia = corrente * tensao;
+  corrente = lerCorrente();
+  tensao   = lerTensao();
+  potencia = corrente * tensao;
 
   Serial.print("Tensao: ");
   Serial.print(tensao, 2);
@@ -70,39 +68,20 @@ void loop() {
   Serial.print(potencia, 2);
   Serial.println("W");
 
-  u8g.firstPage();
-
-  do {
-    u8g.setPrintPos(0, 16);
-    u8g.print("Monitor Solar");
-
-    u8g.setPrintPos(0, 30);
-    u8g.print("W: ");
-    u8g.print(potencia, 3);
-
-    u8g.setPrintPos(0, 45);
-    u8g.print("V: ");
-    u8g.print(tensao, 3);
-
-    u8g.setPrintPos(0, 60);
-    u8g.print("mA: ");
-    u8g.print(corrente * 1000.0, 1);  // convertido de A para mA
-
-  } while (u8g.nextPage());
-
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("Wi-Fi desconectado!");
     return;
   }
 
-  String json = "{";
+  String ts = obterTimestamp();
 
-  json += "\"station_id\":\"EBIKE-ST-001\",";
-  json += "\"timestamp\":\"2026-10-02T14:30:00Z\",";
+  String json = "{";
+  json += "\"station_id\":\"" + String(STATION_ID) + "\",";
+  if (ts.length() > 0) json += "\"timestamp\":\"" + ts + "\",";
 
   json += "\"location\":{";
   json +=   "\"type\":\"Point\",";
-  json +=   "\"coordinates\":[-34.845000,-7.119500]";
+  json +=   "\"coordinates\":[-00.000000,-0.000000]";
   json += "},";
 
   json += "\"status\":{";
@@ -135,20 +114,20 @@ void loop() {
   json += "},";
 
   json += "\"environment\":{";
-  json +=   "\"temperature_c\":31.40,";
-  json +=   "\"humidity_percent\":68.20,";
-  json +=   "\"irradiance_w_m2\":745.80";
+  json +=   "\"temperature_c\":00.00,";
+  json +=   "\"humidity_percent\":00.00,";
+  json +=   "\"irradiance_w_m2\":00.00";
   json += "},";
 
   json += "\"network\":{";
   json +=   "\"interface\":\"WiFi\",";
-  json +=   "\"ssid\":\"" + String(ssid) + "\",";
+  json +=   "\"ssid\":\"" + String(WIFI_SSID) + "\",";
   json +=   "\"signal_dbm\":" + String(WiFi.RSSI()) + ",";
   json +=   "\"ip\":\"" + WiFi.localIP().toString() + "\"";
   json += "},";
 
   json += "\"device\":{";
-  json +=   "\"firmware\":\"1.4.2\",";
+  json +=   "\"firmware\":\"0.0.0\",";
   json +=   "\"hardware_version\":\"1.0\",";
   json +=   "\"uptime_s\":" + String(millis() / 1000);
   json += "}";
@@ -157,11 +136,10 @@ void loop() {
 
   Serial.println(json);
 
-
   WiFiClient cliente;
   HTTPClient http;
 
-  if (!http.begin(cliente, serverUrl)) {
+  if (!http.begin(cliente, SERVER_URL)) {
     Serial.println("Não foi possível iniciar HTTP.");
     return;
   }

@@ -1,20 +1,16 @@
 #ifndef CONFIGS_H
 #define CONFIGS_H
 
-const char* ssid     = "XXXXX";
-const char* password = "XXXXX";
+#define WIFI_SSID "XXXXX"
+#define WIFI_PASSWORD "XXXXX"
 
-const char* serverName = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-const char* serverUrl  = "http://XXXXXXXXXXXXXXXXXXXXXXXXXXXXX";  
+#define SERVER_URL "http://192.168.0.X:3000/api/solar"
 
-#define CLIENT "NAME"
-#define TYPE   "NAME"
+#define STATION_ID "EBIKE-ST-001"
+#define FIRMWARE_VERSION "0.0.0"
 
-
-#define VT_PIN 34   
-#define AT_PIN 35  
-
-
-#define ESP_VOLTAGEM 3.3 
+#define VT_PIN 0   
+#define AT_PIN 0   
+#define ESP_VOLTAGEM 3.3
 
 #endif
