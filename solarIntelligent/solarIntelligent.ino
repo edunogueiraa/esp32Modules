@@ -22,18 +22,14 @@ float potencia = 0.0;
 
 float lerTensao() {
   int leitura = analogRead(VT_PIN); // 14
-  float tensao = leitura * (ESP_VOLTAGEM / 1023.0) * 5;
+  float tensao = (leitura * (ESP_VOLTAGEM / 1023.0)) * 5;
   return tensao;
 }
 
 float lerCorrente() {
   int leitura = analogRead(AT_PIN);
-  float volts = leitura * (ESP_VOLTAGEM / 1023.0);
-  // MAX471 com ROUT = 2kΩ -> 1 V = 1 A
-  float amperes = volts / 1.0;
-  float miliamperes = amperes * 1000.0;
-  if (miliamperes < 0) miliamperes = 0;
-  return miliamperes;
+  float corrente = (leitura * (ESP_VOLTAGEM / 1023.0));
+  return corrente;
 }
 
 float calcularPotencia(float tensao, float corrente){
@@ -51,7 +47,7 @@ void atualizarDisplay(float tensao, float corrente, float potencia) {
   display.print("V: ");
   display.print(tensao, 2); 
   display.setCursor(0, 35);
-  display.print("mA: ");
+  display.print("A: ");
   display.print(corrente, 2); 
   display.setCursor(0, 50);
   display.print("W: ");
@@ -95,7 +91,7 @@ void dadosSerial(float tensao, float corrente, float potencia){
   Serial.println("V");
   Serial.print("Corrente: ");
   Serial.print(corrente, 2);
-  Serial.println("mA");
+  Serial.println("A");
   Serial.print("Potencia: ");
   Serial.print(potencia, 2);
   Serial.println("W");
