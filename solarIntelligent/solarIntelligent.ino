@@ -22,13 +22,13 @@ float potencia = 0.0;
 
 float lerTensao() {
   int leitura = analogRead(VT_PIN); // 14
-  float tensao = (leitura * (ESP_VOLTAGEM / 1023.0)) * 5;
+  float tensao = (leitura * (ESP_VOLTAGEM / 4095.0)) * 5;
   return tensao;
 }
 
 float lerCorrente() {
   int leitura = analogRead(AT_PIN);
-  float corrente = (leitura * (ESP_VOLTAGEM / 1023.0));
+  float corrente = (leitura * (ESP_VOLTAGEM / 4095.0));
   return corrente;
 }
 
